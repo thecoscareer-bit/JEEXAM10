@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Descriptive Exam</title>
+
+<link rel="icon" type="image/png" href="image.png">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+@keyframes scrollRightToLeft {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.scrolling-question {
+  white-space: nowrap;
+  animation: scrollRightToLeft 10s linear 2 forwards;
+}
+</style>
+<script type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script type="text/javascript">
+  emailjs.init('AQrOoA9vgEUwlbyma'); // ✅ your public key
+</script>
+</head>
+
+<body class="bg-slate-100 h-screen overflow-hidden flex items-center justify-center">
+
+<div class="bg-white shadow-2xl rounded-xl w-full max-w-xl p-6 max-h-[90vh] overflow-hidden">
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="flex justify-center mb-4">
+    <img src="THECOS_Google_Form_Header.png" class="max-h-24 object-contain">
+  </div>
+
+  <h1 class="text-2xl font-bold text-center mb-4">Online Exam</h1>
+
+  <input id="studentName" class="w-full border p-2 mb-3 rounded"
+         placeholder="Enter Full Name">
+
+  <input id="studentEmail" type="email"
+         class="w-full border p-2 mb-3 rounded"
+         placeholder="Enter Email Address">
+
+  <select id="studentRole" class="w-full border p-2 mb-4 rounded">
+    <option value="">Select Role</option>
+    <option value="junior">Junior Executive</option>
+  </select>
+
+  <button onclick="startExam()"
+          class="w-full bg-blue-600 text-white py-2 rounded">
+    Start Exam
+  </button>
+</div>
+
+<!-- EXAM -->
+<div id="exam" class="hidden h-full flex flex-col">
+
+  <div class="flex justify-between mb-3">
+    <span id="timer" class="text-red-600 font-bold"></span>
+    <span class="text-sm text-gray-500">
+      Copy / Paste / Tab switch disabled
+    </span>
+  </div>
+
+  <div class="flex-1 overflow-y-auto pr-2">
+    <div class="overflow-hidden mb-3">
+      <h2 id="question" class="font-semibold text-lg"></h2>
+    </div>
+
+    <textarea id="answer"
+      class="w-full border p-3 h-60 resize-none"
+      placeholder="Type your answer here..."
+      onpaste="return false"
+      oncopy="return false"
+      oncut="return false"></textarea>
+  </div>
+
+  <div class="pt-3 border-t">
+    <button onclick="nextQuestion()"
+            class="bg-green-600 text-white px-5 py-2 rounded">
+      Next
+    </button>
+  </div>
+
+</div>
+</div>
+
+<script>
+/* ================= QUESTION BANKS ================= */
+
+const QUESTIONS_ASSISTANT_SECRETARY = [
+  "What is a Co-operative Society? Explain its main objectives.",
+  "Write the principles of Co-operation.",
+  "What is a Credit Co-operative Society? Explain its functions.",
+  "Explain the organizational structure of a Co-operative Society.",
+  "Write the difference between a Company and a Co-operative Society.",
+  "Explain the importance of audit in Co-operative Societies.",
+  "What is the role of the General Body in a Co-operative Society?",
+  "Write the sources of funds of a Co-operative Society.",
+  "What are the advantages of a Co-operative Credit Society compared to a bank?",
+  "How do financial statements help in monitoring credit risk?",
+  "Explain the role of communication in improving customer relations.",
+  "How does employee attitude affect organizational performance? How can it be improved?",
+  "Misunderstanding among staff leads to delays in services of a financial institution. How can it be overcome?",
+  "A Co-operative Society faces liquidity problems due to poor planning of deposits and loans. How can effective planning help?",
+  "An organisation suffers losses due to untrained staff handling accounts. How can effective staffing prevent this?",
+  "Employees are demotivated due to weak leadership. How can effective leadership improve performance?",
+  "Customers complain about lack of information regarding loan schemes. How can communication solve this?",
+  "Managing Committee faces difficulty in approving loans due to conflicting opinions. How can scientific decision-making help?",
+  "Delays in loan processing cause dissatisfaction. How can time management improve service delivery?",
+  "A Co-operative Society is losing members to commercial banks. How can marketing help regain members?",
+  "Uniform loan schemes result in poor utilisation. How can market segmentation improve effectiveness?",
+  "Deposit schemes are unattractive. How can service planning improve deposit mobilisation?",
+  "High interest rates reduce borrowings. How can proper pricing improve loan demand?",
+  "Customers from remote areas face access difficulties. How can service delivery improve marketing?",
+  "Customer loyalty is declining. How can relationship marketing strengthen loyalty?",
+  "Private banks attract youth with digital services. How can a Credit Co-operative attract young members?",
+  "Institution has surplus funds but low loan demand. Suggest a marketing strategy.",
+  "Low staff morale causes poor service. How can morale and performance be improved?",
+  "Loan recovery staff miss targets due to low motivation. How can management motivate them?",
+  "Non-Performing Assets (NPA) are high. What steps should be taken?",
+  "Delays in loan processing cause dissatisfaction. How can time management help?",
+  "Employees feel management decisions are biased. How does perception influence behaviour?",
+  "Loan recovery staff experience stress. How does stress affect behaviour and how can it be managed?",
+  "How does the Balance Sheet help assess the financial position of a society?",
+  "Balance Sheet shows high outstanding loans and overdues. How should management interpret this?",
+  "How can proper pricing improve demand for loans?",
+  "How can proper maintenance of books of accounts solve problems?",
+  "How can motivation improve employee morale and performance?",
+  "How will you handle confidential information?",
+  "How does stress influence human behaviour and how can it be managed?",
+  "How can scientific decision-making help management?",
+  "What are the powers and duties of an Assistant Secretary in a Co-operative Society?",
+  "How does employee attitude affect organizational performance?",
+  "How can management motivate employees?",
+  "How does control help prevent mismanagement?",
+  "Cash has been stolen from a cash box. What steps should be taken?",
+  "How does proper organising improve efficiency?",
+  "Describe a situation where unforeseen circumstances affected your punctuality. How did you handle it?",
+  "Describe a time you managed multiple tasks and meetings in a day. What strategies did you use?",
+  "If the Assistant Secretary post is not given to you, how will it affect the organisation?"
+];
+
+const QUESTIONS_JUNIOR_EXECUTIVE = [
+  "What is management? Explain its main functions.",
+  "Explain the importance of planning in an organization.",
+  "What is leadership? Describe its types.",
+  "Define motivation and explain its importance.",
+  "Explain decision-making process in management.",
+  "What is communication? Why is it important in management?",
+  "Describe principles of scientific management by Frederick Winslow Taylor.",
+  "What is organizational structure?",
+  "Explain the concept of corporate social responsibility (CSR).",
+  "What is performance appraisal?",
+  "What is a cooperative society?",
+  "Explain principles of cooperative movement.",
+  "What is the role of cooperatives in rural development?",
+  "Describe the history of cooperative movement in India.",
+  "What are types of cooperative societies?",
+  "Explain the role of National Cooperative Development Corporation (NCDC).",
+  "What are advantages of cooperative societies?",
+  "What challenges do cooperative societies face?",
+  "Explain the importance of dairy cooperatives in India.",
+  "What is member participation in cooperatives?",
+  "What is the Constitution of India?",
+  "Explain Fundamental Rights.",
+  "What is the importance of Directive Principles of State Policy?",
+  "Explain the concept of Rule of Law.",
+  "What is the Right to Information Act, 2005?",
+  "What is Consumer Protection Act, 2019?",
+  "Define contract under Indian Contract Act, 1872.",
+  "Explain the concept of legal liability.",
+  "What is Public Interest Litigation (PIL)?",
+  "Explain role of Supreme Court of India.",
+  "What is social justice?",
+  "Explain importance of education in social development.",
+  "What is gender equality?",
+  "Describe the impact of urbanization.",
+  "What is poverty alleviation?",
+  "Explain digital divide.",
+  "What is social responsibility of citizens?",
+  "Explain role of youth in nation-building.",
+  "Explain causes of Revolt of 1857.",
+  "Describe role of Mahatma Gandhi in freedom struggle.",
+  "What was Non-Cooperation Movement?",
+  "Explain significance of Dandi March.",
+  "What were features of Indian National Movement?",
+  "What is importance of Constitution adopted in 1950?",
+  "What is sustainable development?",
+  "Explain causes of climate change.",
+  "What is biodiversity?",
+  "Explain importance of renewable energy.",
+  "What is Environmental Protection Act, 1986?",
+  "Suggest measures for environmental conservation."
+];
+
+const QUESTIONS_SENIOR_EXECUTIVE = [
+  "Discuss the significance of Financial Forecasting and Budgetary Control.",
+  "What is Risk Management in Finance? Explain its importance.",
+  "Discuss the role of Financial Statements in evaluating organizational performance.",
+  "What is a co-operative? Explain its basic principles.",
+  "What is Cost Management, and how does it contribute to profitability?",
+  "What are the different types of co-operatives? Explain briefly.",
+  "Explain the management structure of a co-operative society.",
+  "What is the role of government in the co-operative sector?",
+  "Explain the relevance of co-operatives in the present economic scenario.",
+  "Define Management and explain its role at the senior executive level.",
+  "Discuss the role of leadership in effective management.",
+  "What is Risk Management? Explain its relevance for senior executives.",
+  "Explain the role and responsibilities of a Senior Executive in an organization.",
+  "Explain the concept of democracy.",
+  "What are the main functions of a government?",
+  "What is the difference between a presidential and parliamentary system?",
+  "What is the difference between a presidential and parliamentary system?",
+  "What is the significance of elections in a democracy?",
+  "What is corporate environmental responsibility (CER) and why is it critical for senior executives?",
+  "How can environmental sustainability be integrated into corporate strategy?",
+  "Critically examine the role of State Governments in balancing economic growth with social equity in policy formulation.",
+  "Evaluate the role of monitoring and evaluation (M&E) systems in improving the effectiveness of State Government policies.",
+  "Discuss the importance of Centre–State relations in Union Government policymaking and implementation. How can cooperative federalism be strengthened?",
+  "Discuss the role of a Senior Executive (Discipline) in strengthening organizational governance and ethical standards.",
+  "Describe the responsibilities of a Senior Executive (Discipline) in handling major penalty cases and sensitive misconduct matters.",
+  "Highlight the importance of documentation, reporting, and review mechanisms in disciplinary administration at the senior executive level.",
+  "Explain how you would lead a marketing team to improve brand positioning in a saturated market.",
+  "Describe a time when you had to handle a marketing crisis or manage a brand reputation issue. What steps did you take, and what was the outcome?",
+  "With a limited marketing budget, how would you decide between short-term campaigns for immediate sales and long-term brand-building initiatives?",
+  "Can you share an example of how you managed conflicting schedules, high-level meetings, and tight deadlines while ensuring punctuality and efficiency? What tools or strategies did you use?",
+  "Tell us about a time when you had to address a punctuality or time-management issue within your team or department. How did you handle it, and what were the results?",
+  "How do you personally ensure punctuality and reliability in your daily executive responsibilities, particularly when overseeing multiple teams or high-stakes projects?",
+  "Ethics, Risk Management, and Corporate Governance - Explain.",
+  "A senior executive must balance compliance with business strategy. How would you evaluate the impact of GST on pricing, supply chain decisions, and profitability? Provide an example of how GST considerations could influence strategic business decisions.",
+  "PAN is critical for tax compliance and financial transactions in India. How would you design a framework to ensure that all employees, clients, and vendors have valid PANs and that the organization remains compliant with regulatory requirements?",
+  "Describe a situation where an incorrect or missing PAN caused issues for the company, such as delayed tax filings or TDS discrepancies. How would you lead your team to identify, rectify, and prevent such issues in the future?",
+  "Organizational Ethics and Culture – Specify.",
+  "Handling Conflicts of Interest and Accountability – Explain.",
+  "Continuous Performance Improvement – Explain.",
+  "How does the Constitution of India recognize and promote co-operative societies?",
+  "Explain the significance of the 97th Constitutional Amendment for co-operative societies.",
+  "What is Part IX-B of the Constitution and why is it important for governance of co-operative societies?",
+  "How are legislative powers over co-operative societies distributed under the Constitution?",
+  "What constitutional safeguards exist to ensure democratic control in co-operative societies?",
+  "Explain the role of Article 43B in strengthening co-operative institutions?",
+  "How does the Constitution balance state regulation and autonomy of co-operative societies?",
+  "What is the constitutional role of co-operative societies in achieving economic democracy?",
+  "Can a co-operative society’s board be superseded under the Constitution?",
+  "What is the role of Secretary in a Co-operative Society?",
+  "Explain the Leadership Qualities."
+];
+
+const QUESTIONS_LOWER_DEVISION_CLERK = [
+"What is Finance, and why is it important for an organization?",
+
+"Explain the concept of Financial Planning.",
+
+"What are the main objectives of Financial Management?",
+
+"What is Working Capital, and why is it important?",
+
+"Explain the difference between Capital Expenditure and Revenue Expenditure.",
+
+"What is Budgeting, and what are its advantages?",
+
+"Explain the concept of Cash Flow.",
+
+"What are Financial Statements, and why are they important?",
+
+"What is the role of a Junior Executive in the Finance Department?",
+
+"Explain the importance of Internal Control in Finance.",
+
+"What is a Co-operative? Explain its basic concept.",
+
+"Explain the main objectives of the Co-operative Movement.",
+
+"Describe the principles of Co-operation.",
+
+"What are the different types of Co-operative Societies?",
+
+"Explain the importance of Co-operatives in economic development.",
+
+"What is the organizational structure of a Co-operative Society?",
+
+"Explain the role of a Junior Executive in a Co-operative Society.",
+
+"What is the importance of Membership in a Co-operative Society?",
+
+"Explain the concept of Democratic Management in Co-operatives.",
+
+"What is the role of Co-operative Education and Training?",
+
+"What is Management? Explain its importance in an organization.",
+
+"Explain the main functions of management.",
+
+"What is Planning? Discuss its significance.",
+
+"Define Organizing and explain its process.",
+
+"What is Staffing? Why is it important?",
+
+"Explain the concept of Motivation.",
+
+"What is Leadership? State its qualities.",
+
+"Define Communication and explain its importance in management.",
+
+"What is Controlling? Describe its steps.",
+
+"Explain the role of a Junior Executive in an organization.",
+
+"What is politics and why is it important in society?",
+
+"Explain the concept of democracy.",
+
+"What are the main functions of a government?",
+
+"Define political parties and their role.",
+
+"What is the difference between a presidential and parliamentary system?",
+
+"What is the meaning of political ideology?",
+
+"Explain the concept of separation of powers.",
+
+"What is the significance of elections in a democracy?",
+
+"Define civil rights and give examples.",
+
+"How does public policy impact society?",
+
+"What is environmental sustainability and why is it important for businesses?",
+
+"Explain the main causes of air pollution.",
+
+"What are the major types of waste, and how can they be managed?",
+
+"How does climate change affect the environment and businesses?",
+
+"What is the role of environmental policies in an organization?",
+
+"Explain the concept of carbon footprint and how it can be reduced.",
+
+"What are renewable and non-renewable resources? Give examples.",
+
+"Describe the concept of circular economy.",
+
+"How can businesses contribute to environmental conservation?",
+
+"What is the importance of Environmental Impact Assessment (EIA) in project planning?"
+];
+
+
+/* ================================================= */
+
+const QUESTION_VISIBLE_TIME = 20; // seconds
+const ANSWER_TIME = 100;          // seconds
+
+let QUESTIONS = [];
+let studentName = "", studentEmail = "", studentRole = "";
+let answers = [], index = 0;
+let questionTimer, answerTimer, answerTimeLeft;
+let examFinished = false;
+
+/* START */
+function startExam() {
+  studentName = document.getElementById("studentName").value.trim();
+  studentEmail = document.getElementById("studentEmail").value.trim();
+  studentRole = document.getElementById("studentRole").value;
+
+  if (!studentName || !studentEmail || !studentRole) {
+    alert("Please enter Name, Email and select Role");
+    return;
+  }
+
+  //QUESTIONS = studentRole === "assistant"
+    //? QUESTIONS_ASSISTANT_SECRETARY
+    //: QUESTIONS_JUNIOR_EXECUTIVE;
+	
+	switch (studentRole) {
+  case "assistant":
+    QUESTIONS = QUESTIONS_ASSISTANT_SECRETARY;
+    break;
+
+  case "junior":
+    QUESTIONS = QUESTIONS_JUNIOR_EXECUTIVE;
+    break;
+
+  case "senior":
+    QUESTIONS = QUESTIONS_SENIOR_EXECUTIVE;
+    break;
+
+  case "ldc":
+    QUESTIONS = QUESTIONS_LOWER_DEVISION_CLERK;
+    break;
+
+  default:
+    alert("Invalid role selected");
+    return;
+}
+
+
+  resetState();
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("exam").classList.remove("hidden");
+
+  document.documentElement.requestFullscreen?.();
+  loadQuestion();
+}
+
+/* RESET */
+function resetState() {
+  answers = [];
+  index = 0;
+  examFinished = false;
+}
+
+/* LOAD QUESTION */
+function loadQuestion() {
+  const q = document.getElementById("question");
+
+  q.classList.remove("scrolling-question");
+  void q.offsetWidth;
+
+  q.innerText = QUESTIONS[index];
+  q.style.visibility = "visible";
+  q.classList.add("scrolling-question");
+
+  document.getElementById("answer").value = "";
+  answerTimeLeft = ANSWER_TIME;
+  updateTimer();
+
+  clearTimeout(questionTimer);
+  clearInterval(answerTimer);
+
+  // Hide question after 20 seconds
+  questionTimer = setTimeout(() => {
+    q.style.visibility = "hidden";
+  }, QUESTION_VISIBLE_TIME * 1000);
+
+  // Answer timer
+  answerTimer = setInterval(() => {
+    answerTimeLeft--;
+    updateTimer();
+    if (answerTimeLeft <= 0) nextQuestion();
+  }, 1000);
+}
+
+/* TIMER */
+function updateTimer() {
+  document.getElementById("timer").innerText =
+    `Answer time left: ${answerTimeLeft}s`;
+}
+
+/* NEXT */
+function nextQuestion() {
+  if (examFinished) return;
+
+  clearTimeout(questionTimer);
+  clearInterval(answerTimer);
+
+  answers.push(document.getElementById("answer").value);
+  index++;
+
+  index < QUESTIONS.length ? loadQuestion() : normalFinish();
+}
+
+/* FINISH */
+function normalFinish() {
+  examFinished = true;
+  clearTimeout(questionTimer);
+  clearInterval(answerTimer);
+  exitFullscreen();
+  sendAnswersByEmail();
+}
+
+
+/* GO BACK */
+function goToLogin() {
+  document.getElementById("exam").classList.add("hidden");
+  document.getElementById("login").classList.remove("hidden");
+}
+
+/* EMAIL (EmailJS v4) */
+function sendAnswersByEmail() {
+  let formattedAnswers = "";
+
+  QUESTIONS.forEach((q, i) => {
+    formattedAnswers += `Q${i + 1}: ${q}\n`;
+    formattedAnswers += `Answer:\n${answers[i] || "No answer"}\n\n`;
+  });
+
+  emailjs.send(
+    "service_8yr4zf5",   // ✅ Gmail service ID
+    "template_kyqnyrd",  // ✅ your template ID
+    {
+      student_name: studentName,
+      student_email: studentEmail,
+      student_role: studentRole,
+      answers: formattedAnswers,
+      reply_to: studentEmail
+    }
+  ).then(() => {
+    alert("Exam submitted successfully");
+    goToLogin(); // back to home
+  }).catch(err => {
+    alert("Submission failed. Please contact admin.");
+    console.error("EmailJS Error:", err);
+  });
+}
+
+
+/* SECURITY */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && !examFinished) {
+    alert("Tab switching detected. Exam terminated.");
+    location.reload();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && ["c","v"].includes(e.key.toLowerCase())) {
+    e.preventDefault();
+    alert("Copy / Paste not allowed");
+  }
+});
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+window.onbeforeunload = () => {
+  if (!examFinished) return "Exam in progress";
+};
+
+function exitFullscreen() {
+  document.fullscreenElement && document.exitFullscreen();
+}
+</script>
+
+</body>
+</html>
+
